@@ -63,31 +63,54 @@
       <div v-if="mulaiSoal">
         <h1 class="text-2xl font-bold mb-4">Ujian Online</h1>
 
-        <div v-for="question in soal" :key="question.id" class="mb-4">
-          <p>{{ question.text }}</p>
-          <div v-for="option in question.options" :key="option">
+        <div
+          v-for="(question, key) in soalYangDilihat"
+          :key="question.id"
+          class="mb-4"
+        >
+          <p>{{ question.pertanyaan }}</p>
+          <div v-for="answer in question.answers" :key="answer.content">
             <input
               type="radio"
-              :id="option"
-              :value="option"
+              :name="key"
+              :id="answer.content"
+              :value="answer.content"
               v-model="question.jawabanYangDipilih"
               :disabled="tampilkanHasil"
             />
-            <label :for="option" class="ml-2">{{ option }}</label>
+            <label :for="answer.content" class="ml-2">{{
+              answer.content
+            }}</label>
           </div>
+        </div>
+
+        <div class="mt-4">
+          <button
+            @click="kembaliPertanyaan"
+            :disabled="indeksPertanyaan === 0"
+            class="bg-gray-300 text-gray-600 px-4 py-2 rounded mr-2"
+          >
+            Sebelumnya
+          </button>
+          <button
+            @click="nextPertanyaan"
+            :disabled="indeksPertanyaan === soal.length - 1"
+            class="bg-gray-300 text-gray-600 px-4 py-2 rounded"
+          >
+            Selanjutnya
+          </button>
         </div>
 
         <button
           @click="kirimJawaban"
-          :disabled="nonaktifkanTombolKirim"
-          class="bg-blue-500 text-white px-4 py-2 rounded"
+          class="bg-blue-500 text-white px-4 py-2 mt-4 rounded"
         >
           Submit
         </button>
 
         <div v-if="tampilkanHasil" class="mt-4">
           <h2 class="text-xl font-bold mb-2">Hasil Ujian</h2>
-          <p>Skor Anda: {{ skor }}/{{ soal.length }}</p>
+          <p>Nilai Anda: {{ skor }}</p>
 
           <div v-for="question in soal" :key="question.id" class="mb-4">
             <p
@@ -106,7 +129,6 @@
           <p>Nama: {{ nama }}</p>
           <p>Kelas: {{ kelas }}</p>
           <p>Jenis Kelamin: {{ jenisKelamin }}</p>
-          <p>Nilai: {{ skor }}/{{ soal.length }}</p>
 
           <button
             @click="resetSemua"
@@ -121,42 +143,35 @@
 </template>
 
 <script setup>
+import { soal } from "@/utils/soal";
+
 const nama = ref("");
 const kelas = ref("");
 const jenisKelamin = ref("");
 const mulaiSoal = ref(false);
+const indeksPertanyaan = ref(0);
 
-const soal = ref([
-  {
-    id: 1,
-    text: "Apa ibukota Indonesia?",
-    options: ["A. Jakarta", "B. Surabaya", "C. Bandung", "D. Medan"],
-    jawabanBenar: "A. Jakarta",
-    jawabanYangDipilih: null,
-  },
-  {
-    id: 2,
-    text: "Berapakah 5 + 3?",
-    options: ["A. 6", "B. 7", "C. 8", "D. 9"],
-    jawabanBenar: "C. 8",
-    jawabanYangDipilih: null,
-  },
-]);
+const soalYangDilihat = computed(() => {
+  return [soal[indeksPertanyaan.value]];
+});
+
+const nextPertanyaan = () => {
+  if (indeksPertanyaan.value < soal.length - 1) {
+    indeksPertanyaan.value++;
+  }
+};
+
+const kembaliPertanyaan = () => {
+  if (indeksPertanyaan.value > 0) {
+    indeksPertanyaan.value--;
+  }
+};
 
 const tampilkanHasil = ref(false);
 
 const kirimJawaban = () => {
+  console.log("coba fungsi");
   tampilkanHasil.value = true;
-};
-
-const resetSoal = () => {
-  soal.value.forEach((question) => {
-    question.jawabanYangDipilih = null;
-  });
-  tampilkanHasil.value = false;
-  nama.value = "";
-  kelas.value = "";
-  jenisKelamin.value = "";
 };
 
 const resetSemua = () => {
@@ -165,15 +180,19 @@ const resetSemua = () => {
   nama.value = "";
   kelas.value = "";
   jenisKelamin.value = "";
-  soal.value.forEach((question) => {
+  soal.forEach((question) => {
     question.jawabanYangDipilih = null;
   });
 };
 
 const skor = computed(() => {
-  return soal.value.filter(
+  const jawabanBenar = soal.filter(
     (question) => question.jawabanYangDipilih === question.jawabanBenar
   ).length;
+
+  const totalSoal = soal.length;
+
+  return Math.floor((100 / totalSoal) * jawabanBenar);
 });
 
 const kerjakanSoal = () => {
@@ -188,9 +207,5 @@ const inputValid = computed(() => {
     kelas.value <= 12;
   const isJenisKelaminValid = jenisKelamin.value !== "";
   return namaValid && isKelasValid && isJenisKelaminValid;
-});
-
-const nonaktifkanTombolKirim = computed(() => {
-  return soal.value.some((question) => question.jawabanYangDipilih === null);
 });
 </script>
